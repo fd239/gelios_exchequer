@@ -1,12 +1,10 @@
-
+from django.conf import settings
 from django.http import HttpResponse
-import requests
 
-EXTERNAL_BASE_REQUEST_URL = 'http://172.31.17.100/c2_test3_gelios/hs/Exchequer_Services/Applications/'
+import requests
 
 
 def confirm(request):
-
     application_uuid = request.GET.get('application_uuid')
 
     if application_uuid is None:
@@ -35,16 +33,15 @@ def decline(request):
     external_response = send_external_request(request_data)
 
     if external_response.status_code == 200:
-        return HttpResponse('заявка отклонена')
+        return HttpResponse('Заявка отклонена')
     else:
         return HttpResponse('Заявка не отклонена')
 
 
 def send_external_request(request_data):
-    response = requests.post(
-        EXTERNAL_BASE_REQUEST_URL,
+    return requests.post(
+        settings.EXTERNAL_BASE_REQUEST_URL,
         json=request_data,
-        auth=requests.auth.HTTPBasicAuth('web-user', 'pas001')
+        auth=requests.auth.HTTPBasicAuth(
+            settings.EXTERNAL_BASE_USER, settings.EXTERNAL_BASE_PASS)
     )
-
-    return response
