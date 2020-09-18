@@ -1,43 +1,50 @@
 
 from django.http import HttpResponse
-from rest_framework import viewsets, mixins
-from rest_framework.decorators import action
-
-from .models import Application
-from .serializers import ApplicationSerializer
-
 import requests
 
 EXTERNAL_BASE_REQUEST_URL = 'http://172.31.17.100/c2_test3_gelios/hs/Exchequer_Services/Applications/'
 
 
-class ApplicationViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    serializer_class = ApplicationSerializer
-    queryset = Application.objects.all()
+def confirm(request):
 
-    @action(detail=False)
-    def confirm(self, request):
-        
-        application_uuid = request.GET.get('application_uuid')
-        data = {'user': 'web-user', 'password': 'pas001'}
-        request_data = {'Application_UUID': application_uuid,
-                        'Action': 'Confirmation'}
-        
-        response = requests.post(
-            EXTERNAL_BASE_REQUEST_URL, 
-            data=request_data, 
-            auth=requests.auth.HTTPBasicAuth('web-user', 'pas001')
-        )
+    application_uuid = request.GET.get('application_uuid')
 
-        if response.status_code == 200:
-            return HttpResponse(f'Заявка успешно согласована')
-        elif response.status_code == 400:
-            return HttpResponse(f'Заявка не согласована. Причина: {response.text}')
-        else:
-            return HttpResponse(f'Заявка не согласована')
+    if application_uuid is None:
+        return HttpResponse('Переданы не верные параметры')
+
+    request_data = {'Application_UUID': application_uuid,
+                    'Action': 'Confirm'}
+
+    external_response = send_external_request(request_data)
+
+    if external_response.status_code == 200:
+        response_dict = external_response.json()
+        return HttpResponse(response_dict['Comment'])
+    elif external_response.status_code == 400:
+        return HttpResponse('Заявка не согласована')
+    else:
+        return HttpResponse('Заявка не согласована')
 
 
-    @action(detail=False)
-    def decline(self, request):
-        application_uuid = request.GET.get('application_uuid')
-        return HttpResponse(f'заявка отклонена')
+def decline(request):
+    application_uuid = request.GET.get('application_uuid')
+
+    request_data = {'Application_UUID': application_uuid,
+                    'Action': 'Decline'}
+
+    external_response = send_external_request(request_data)
+
+    if external_response.status_code == 200:
+        return HttpResponse('заявка отклонена')
+    else:
+        return HttpResponse('Заявка не отклонена')
+
+
+def send_external_request(request_data):
+    response = requests.post(
+        EXTERNAL_BASE_REQUEST_URL,
+        json=request_data,
+        auth=requests.auth.HTTPBasicAuth('web-user', 'pas001')
+    )
+
+    return response

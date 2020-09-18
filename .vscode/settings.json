@@ -3,5 +3,5 @@
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
     "python.linting.pycodestyleCategorySeverity.E": "Information",
-    "python.linting.lintOnSave": false
+    "editor.formatOnSave": true
 }
