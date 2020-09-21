@@ -1,41 +1,67 @@
 from django.conf import settings
-from django.http import HttpResponse
+from django.shortcuts import render
 
 import requests
+from .forms import DeclineReasonForm
 
 
 def confirm(request):
-    application_uuid = request.GET.get('application_uuid')
+    confirmation_code = request.GET.get('code')
 
-    if application_uuid is None:
-        return HttpResponse('Переданы не верные параметры')
+    if confirmation_code is None:
+        context = {'result': False, 'comment': 'Переданы неверные параметры'}
+        return render(request, 'confirmation.html', context)
 
-    request_data = {'Application_UUID': application_uuid,
-                    'Action': 'Confirm'}
+    request_data = {'confirmation_code': confirmation_code,
+                    'action': 'confirm'}
 
     external_response = send_external_request(request_data)
 
     if external_response.status_code == 200:
-        response_dict = external_response.json()
-        return HttpResponse(response_dict['Comment'])
-    elif external_response.status_code == 400:
-        return HttpResponse('Заявка не согласована')
+        context = external_response.json()
     else:
-        return HttpResponse('Заявка не согласована')
+        context = {'result': False, 'comment': 'Заявка не согласована. ' +
+                   '\n' + external_response.text}
+
+    return render(request, 'confirmation.html', context)
 
 
 def decline(request):
-    application_uuid = request.GET.get('application_uuid')
 
-    request_data = {'Application_UUID': application_uuid,
-                    'Action': 'Decline'}
+    if request.method == 'POST':
+        form = DeclineReasonForm(request.POST)
 
-    external_response = send_external_request(request_data)
+        if form.is_valid():
+            confirmation_code = request.GET.get('code')
 
-    if external_response.status_code == 200:
-        return HttpResponse('Заявка отклонена')
+            if confirmation_code is None:
+                context = {'result': False,
+                           'comment': 'Переданы неверные параметры'
+                           }
+
+                return render(request, 'confirmation.html', context)
+
+            request_data = {'confirmation_code': confirmation_code,
+                            'action': 'decline',
+                            'decline_reason': form.cleaned_data['decline_reason']
+                            }
+
+            external_response = send_external_request(request_data)
+
+            if external_response.status_code == 200:
+                context = external_response.json()
+            else:
+                context = {'result': False, 'comment': 'Заявка не отклонена. ' +
+                           '\n' + external_response.text}
+
+            return render(request, 'confirmation.html', context)
     else:
-        return HttpResponse('Заявка не отклонена')
+        form = DeclineReasonForm()
+        return render(
+            request,
+            'decline.html',
+            {'form': form, 'code': request.GET.get('code')}
+        )
 
 
 def send_external_request(request_data):

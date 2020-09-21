@@ -1,0 +1,23 @@
+<!doctype html>
+{% load static %}
+<html>
+
+<head>
+    <link rel='icon' href='data:;base64,='>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+    <title></title>
+    <!-- Загрузка статики -->
+    <link rel='stylesheet' type='text/css' href='{% static "css/main.css" %}'>
+</head>
+
+<body>
+    <h2>Введите причину отказа</h2>
+    <form action='' method='post'>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type='submit' class='button'>Отправить</button>
+    </form>
+</body>
+
+</html>
