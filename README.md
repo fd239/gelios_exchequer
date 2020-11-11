@@ -1,4 +1,4 @@
-# DynamSoftBarcodeReaderPython
+# Gelios Exchequer
 
 The web service, which receives confirmation code from GET request and sending request to 1C system
 
